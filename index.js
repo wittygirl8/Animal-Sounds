@@ -31,14 +31,46 @@ const AnimalIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AnimalIntent';
     },
     handle(handlerInput) {
-        
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+            sessionAttributes.index = {
+                "i": getRandom(anisounds)
+            }
         let speakOutput;
         var aniname = handlerInput.requestEnvelope.request.intent.slots.animal.value;
-        for( let index = 0; index < 15; index ++){
+        for( let index = 0; index < anisounds.length ; index ++){
              if (anisounds[index].animal === aniname.toLowerCase()){
                  speakOutput = anisounds[index].sound[getRandom(anisounds[index].sound)];
              }
          }
+         speakOutput += ' Would you also like to play '+anisounds[sessionAttributes.index.i].animal+' sound';
+         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+const UserWishIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'UserWishIntent';
+    },
+    handle(handlerInput) {
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        let speakOutput,index = sessionAttributes.index.i;
+        var wish = handlerInput.requestEnvelope.request.intent.slots.wish.value;
+             if (wish.includes("yes") || wish.includes("yeah") || wish.includes("sure")){
+                 speakOutput = anisounds[index].sound[getRandom(anisounds[index].sound)];
+                 sessionAttributes.index.i = getRandom(anisounds);
+                 speakOutput += 'Would you also like to play '+anisounds[sessionAttributes.index.i].animal+' sound';
+             }
+            else if(wish.includes("no") || wish.includes("nope") || wish.includes("nah")){
+                speakOutput = ' Name the animal. You wanna hear the sound';
+            }
+            else{
+                speakOutput = 'Give a relevent Response.';
+            }
+         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -154,6 +186,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         AnimalIntentHandler,
+        UserWishIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         FallbackIntentHandler,
